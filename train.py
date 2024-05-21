@@ -1,10 +1,13 @@
+import argparse as ap 
+import numpy as np
 import torch
+import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
-import numpy as np
 from torch.utils.data import DataLoader
 from src.MSDNDataset import MSDNDataset
-import argparse as ap 
+from src.Model import MSDN
+import matplotlib.pyplot as plt
 
 def get_dataloaders(transform = None) -> dict[str, dict[str, DataLoader]]:
     data_folders = ['train', 'val', 'test']
@@ -36,6 +39,23 @@ def main():
 
     transform = None  # TODO: Add transforms
     dataloaders = get_dataloaders(transform)
+    
+    model = MSDN(in_channels=3, num_classes=10)
+    # Loss metric: RMSE (or SSIM?)
+    criterion = nn.MSE() # calcualte the sqrt(MSE) in the training loop
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    for epoch in range(epochs):
+        for sinograms, images in dataloaders['train']['clean']:
+            # Model should map FBP reconsutruction of sinogram to image
+            # TODO: obtain FBP reconstructions of sinograms -> do it on more outer level - no need to do it in the training loop
+
+            # optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = torch.sqrt(criterion(outputs, images)) # square root of MSE = RMSE
+
+            # loss.backward()
+            # optimizer.step()
 
 
     
