@@ -28,25 +28,35 @@ def run_algorithm(image_id, sinogram_id,
     return astra.data2d.get(image_id) 
 
 
-def reconstruct(image, num_angles,
-                from_sinogram=False,
-                num_iterations=100):
+def create_sinogram(image, num_angles, num_iterations=100):
     angles = np.linspace(0, np.pi, num_angles, False)
     proj_geom = astra.create_proj_geom('parallel', 1.0, image.shape[0], angles)
-    
     vol_geom = astra.create_vol_geom(image.shape)
     projector_id = astra.create_projector('linear', proj_geom, vol_geom)
     recon_id = astra.data2d.create('-vol', vol_geom, data=image)
 
-    if from_sinogram: # Assume image is sinogram
-        sinogram = image.copy()
-        sinogram_id = astra.data2d.create('-sino', proj_geom, sinogram)
+    sinogram_id = astra.data2d.create('-sino', proj_geom)
+    _ = run_algorithm(recon_id, sinogram_id, projector_id,
+                        'FP', num_iterations)
+    sinogram = astra.data2d.get(sinogram_id)
 
-    else: # Include sinogram creation
-        sinogram_id = astra.data2d.create('-sino', proj_geom)
-        _ = run_algorithm(recon_id, sinogram_id, projector_id,
-                          'FP', num_iterations)
-        sinogram = astra.data2d.get(sinogram_id)
+    # Clean-up
+    astra.projector.delete(projector_id)
+    astra.data2d.delete(recon_id)
+    astra.data2d.delete(sinogram_id)
+
+    return sinogram
+
+
+def reconstruct(sinogram, num_angles, num_iterations=100):
+    angles = np.linspace(0, np.pi, num_angles, False)
+    proj_geom = astra.create_proj_geom('parallel', 1.0, sinogram.shape[1], angles)
+    
+    vol_geom = astra.create_vol_geom(sinogram.shape)
+    projector_id = astra.create_projector('linear', proj_geom, vol_geom)
+    recon_id = astra.data2d.create('-vol', vol_geom, data=sinogram)
+
+    sinogram_id = astra.data2d.create('-sino', proj_geom, sinogram)
 
     # FBP
     fbp_recon = run_algorithm(recon_id, sinogram_id, projector_id,
@@ -58,7 +68,7 @@ def reconstruct(image, num_angles,
     astra.data2d.delete(recon_id)
     astra.data2d.delete(sinogram_id)
     
-    return sinogram, fbp_recon
+    return fbp_recon
 
 
 def reconstruct_with_angles(filename, output_dir, angles=(45, 90, 180),

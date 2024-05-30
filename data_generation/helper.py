@@ -23,6 +23,19 @@ def save_slices(phantom3d, out_folder):
         slice[:, :, :3] *= 255 # RGB channels rescaled to 0..255
         imageio.imsave(f'{out_folder}/slices/phantom_3d_slice_{i}.tiff', slice)
 
+def get_slices(phantom3d, rgba=False):
+    slices = []
+    for i in trange(phantom3d.shape[-1]):
+        slice = phantom3d[:, :, i]
+        if rgba:
+            slice = slice.reshape(slice.shape[0], slice.shape[1], 1)
+            slice = np.repeat(slice, 4, axis=2) # Convert to 4 channels per px
+            slice[:, :, 3] = 255 # Alpha channel always max
+            slice[:, :, :3] *= 255 # RGB channels rescaled to 0..255
+        slices.append(slice)
+    return np.array(slices)
+    
+
 def convert_rgba_to_greyscale(img):
     rgb = img[:, :, :3]
     alpha = img[:, :, 3]
