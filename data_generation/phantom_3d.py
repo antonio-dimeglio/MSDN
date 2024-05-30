@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import trange
 import matplotlib.pyplot as plt
+from helper import save_slices, load_phantom
 
 def generate_void(phantom_shape, voids, n_candidates=10_000, r_max=100):
     mid_point = phantom_shape // 2
@@ -89,41 +90,17 @@ def generate_phantom(phantom_shape, max_voids=10_000, n_candidates=1000, r_max=1
 
     if save:
         if not out_file:
-            out_file = f'phantom_{phantom_shape[0]}_{phantom_shape[1]}_{phantom_shape[2]}.npy'
+            out_file = f'3d_data/phantom_{phantom_shape[0]}_{phantom_shape[1]}_{phantom_shape[2]}.npy'
         phantom_packed = np.packbits(phantom)
         np.save(out_file, phantom_packed)
         print(f'Phantom saved to {out_file}.')
-    
     return phantom
-
-
-def load_phantom(filename, phantom_size=None):
-    phantom = np.load(filename)
-    phantom = np.unpackbits(phantom)
-
-    if not phantom_size:
-        phantom_size = filename.replace('.npy', '').split('_')[1:]
-        phantom_size = [int(i) for i in phantom_size]
-    
-    return phantom.reshape(phantom_size)
 
 
 def main():
     phantom_shape = np.array([256, 256, 128])
     phantom = generate_phantom(phantom_shape, 1000, 1000, 50, True)
-    plt.imshow(phantom[phantom_shape[0] // 2, :, :], origin='lower', cmap='grey')
-    plt.savefig('phantom_X_axis.png')
-    plt.clf()
-
-    plt.imshow(phantom[:, phantom_shape[1] // 2, :], origin='lower', cmap='grey')
-    plt.savefig('phantom_Y_axis.png')
-    plt.clf()
-
-    plt.imshow(phantom[:, :, phantom_shape[2] // 2], origin='lower', cmap='grey')
-    plt.savefig('phantom_Z_axis.png')
-
-    print('Example slice images saved to phantom_X_axis.png, phantom_Y_axis.png and phantom_Z_axis.png.')
-
+    save_slices(phantom)
 
 if __name__ == '__main__':
     main()
