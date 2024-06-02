@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 
 def generate_sinograms():
     folders = ['train', 'test', 'val']
+    angles = [180, 90, 45]
     image_type = ['noisy', 'clean', 'label']
+    
 
     for folder in folders:
 
@@ -21,18 +23,24 @@ def generate_sinograms():
             os.makedirs(sinogram_type_folder, exist_ok=True)
 
             num_images = len(os.listdir(f'phantom/{folder}/{img_type}'))
+            for angle in angles:
+                os.makedirs(sinogram_type_folder / str(angle), exist_ok=True)
+            
 
             for i in range(num_images):
                 data = iio.imread(f'phantom/{folder}/{img_type}/{i}.tiff')
-                proj_geom = astra.create_proj_geom('parallel', 1.0, data.shape[0], np.linspace(0, np.pi, data.shape[0], False))
-                vol_geom = astra.create_vol_geom(data.shape)
-                proj_id = astra.create_projector('linear', proj_geom, vol_geom)
-                id, sinogram = astra.create_sino(data, proj_id)
 
-                sinogram = sinogram / sinogram.max()
+                for angle in angles:
+                    
+                    proj_geom = astra.create_proj_geom('parallel', 1.0, data.shape[0], np.linspace(0, angle, data.shape[0], False))
+                    vol_geom = astra.create_vol_geom(data.shape)
+                    proj_id = astra.create_projector('linear', proj_geom, vol_geom)
+                    id, sinogram = astra.create_sino(data, proj_id)
 
-                iio.imwrite(sinogram_type_folder / f'{i}.tiff', sinogram)
-                print(f'Sinogram {i} of {folder}/{img_type} generated.')
+                    sinogram = sinogram / sinogram.max()
+
+                    iio.imwrite(sinogram_type_folder / str(angle) / f'{i}.tiff', sinogram)
+                    print(f'Sinogram {i} of {folder}/{img_type} generated.')
 
 def __main__():
     generate_sinograms()
