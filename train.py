@@ -55,7 +55,9 @@ def main():
                    out_channels=4,
                    num_features=4,
                    num_layers=10, 
-                   dilations=np.arange(1, 11))
+                #    dilations=np.ones(10).astype(int),
+                   dilations=np.arange(1, 11),
+                   )
 
     # Loss metric: RMSE (or SSIM?)
     criterion = nn.MSELoss() # calcualte the sqrt(MSE) in the training loop
@@ -67,6 +69,7 @@ def main():
         for inputs, targets in dataloaders['train'][256]['clean']:
             optimizer.zero_grad()
             outputs = model(inputs)
+            targets = targets.type(torch.float32)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()

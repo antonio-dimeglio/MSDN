@@ -161,3 +161,4 @@ cython_debug/
 
 phantom/
 sinogram/
+3d_data
