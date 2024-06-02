@@ -8,19 +8,29 @@ from torch.utils.data import DataLoader
 from src.MSDNDataset import MSDNDataset
 from src.Model import MSDN
 import matplotlib.pyplot as plt
+from tqdm import trange
+from src.MSDNNet import MSDNet
 
-def get_dataloaders(transform = None) -> dict[str, dict[str, DataLoader]]:
-    data_folders = ['train', 'val', 'test']
-    img_types = ['noisy', 'clean', 'label']
+def get_dataloaders(root_folder, transform = None) -> dict[str, dict[str, DataLoader]]:
+    splits = ['train', 'val', 'test']
+    groups = ['noisy', 'clean']
+    num_angles = [45, 90, 180, 256]
+
 
     datasets = {
-        data_folder: {img_type: MSDNDataset(data_folder, img_type, transform) for img_type in img_types}
-        for data_folder in data_folders
+        split: {angle: {group: MSDNDataset(f'{root_folder}/fbps/{split}/{angle}/{group}',
+                                           f'{root_folder}/phantoms/{split}/{angle}/{group}',
+                                           transform)
+                        for group in groups} 
+                for angle in num_angles}
+        for split in splits
     }
 
     dataloaders = {
-        data_folder: {img_type: DataLoader(datasets[data_folder][img_type], batch_size=4, shuffle=True) for img_type in img_types}
-        for data_folder in data_folders
+        split: {angle: {group: DataLoader(datasets[split][angle][group], batch_size=4, shuffle=True)
+                        for group in groups}
+                for angle in num_angles}
+        for split in splits
     }
 
     return dataloaders
@@ -34,28 +44,36 @@ def main():
     
     args = parser.parse_args()
 
-    epochs = args.epochs
+    num_epochs = args.epochs
     lr = args.lr
 
+    root_folder = '3d_data'
     transform = None  # TODO: Add transforms
-    dataloaders = get_dataloaders(transform)
+    dataloaders = get_dataloaders(root_folder, transform)
     
-    model = MSDN(in_channels=3, num_classes=10)
+    model = MSDNet(in_channels=4,
+                   out_channels=4,
+                   num_features=4,
+                   num_layers=10, 
+                   dilations=np.arange(1, 11))
+
     # Loss metric: RMSE (or SSIM?)
-    criterion = nn.MSE() # calcualte the sqrt(MSE) in the training loop
+    criterion = nn.MSELoss() # calcualte the sqrt(MSE) in the training loop
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
-    for epoch in range(epochs):
-        for sinograms, images in dataloaders['train']['clean']:
-            # Model should map FBP reconsutruction of sinogram to image
-            # TODO: obtain FBP reconstructions of sinograms -> do it on more outer level - no need to do it in the training loop
 
-            # optimizer.zero_grad()
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        for inputs, targets in dataloaders['train'][256]['clean']:
+            optimizer.zero_grad()
             outputs = model(inputs)
-            loss = torch.sqrt(criterion(outputs, images)) # square root of MSE = RMSE
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+        
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train'][256]['clean']):.4f}")
 
-            # loss.backward()
-            # optimizer.step()
 
 
     

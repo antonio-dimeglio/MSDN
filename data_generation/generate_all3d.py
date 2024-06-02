@@ -12,11 +12,12 @@ def main():
     data_folder = '3d_data_2'
     num_slices = 128
     phantom_fn = '3d_data/phantom_256_256_128.npy'
-    phantom_fn = None
-    os.makedirs(data_folder, exist_ok=True)
-    os.makedirs(f'{data_folder}/slices', exist_ok=True)
-    os.makedirs(f'{data_folder}/sinograms', exist_ok=True)
-    os.makedirs(f'{data_folder}/fbp_reconstructions', exist_ok=True)
+    # phantom_fn = None
+    [os.makedirs(f'{data_folder}/{dt}/{split}/{angle}/{group}', exist_ok=True)
+     for dt in ('phantoms', 'sinograms', 'fbps')
+     for split in ('train', 'test', 'val')
+     for angle in (45, 90, 180, 256)]
+
 
     # Stage 1: Generate a phantom and slice it
     if phantom_fn:
@@ -29,13 +30,20 @@ def main():
     slices = get_slices(phantom, rgba=False)
 
     # Stage 2: Create Sinograms, FBP reconstructions and save
-    for i in trange(len(slices)):
-        for angle in (45, 90, 180):
-            sinogram = create_sinogram(slices[i], angle, num_iterations=100)
-            fbp_recon = reconstruct(sinogram, angle, num_iterations=100)
-            iio.imsave(f'{data_folder}/slices/phantom_3d_slice_{i}.tiff', slices[i])
-            iio.imsave(f'{data_folder}/sinograms/phantom_3d_sinogram_{i}_{angle}.tiff', sinogram)
-            iio.imsave(f'{data_folder}/fbp_reconstructions/phantom_3d_fbp_{i}_{angle}.tiff', fbp_recon)
+    for split in splits.keys():
+        print(f'Starting {split}...')
+        for angle in (45, 90, 180, 256):
+            print(f'\t Angle {angle} in progress.')
+            for i, slice in enumerate(splits[split]):
+                sinogram = create_sinogram(slice, angle, num_iterations=100)
+                fbp_recon = reconstruct(sinogram, angle, num_iterations=100)
+                iio.imsave(f'{data_folder}/phantoms/{split}/{angle}/{group}/{i}.tiff', slice)
+                iio.imsave(f'{data_folder}/sinograms/{split}/{angle}/{group}/{i}.tiff', sinogram)
+                iio.imsave(f'{data_folder}/fbps/{split}/{angle}/{group}/{i}.tiff', fbp_recon)
+            print(f'\t Angle {angle} finished.')
+        print(f'Finished {split}.')
+
+
 
 
 

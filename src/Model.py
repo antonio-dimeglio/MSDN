@@ -22,7 +22,7 @@ class MSDBlock(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(num_layers):
             layer = MSDLayer(in_channels + i * growth_rate, growth_rate, dilation=2**i)
-            self.layers.append(layer)           
+            self.layers.append(layer)
 
     def forward(self, x):
         features = [x] 
