@@ -89,19 +89,22 @@ def main():
         path.mkdir(exist_ok=True)
 
         # Create subfolders for noisy, clean and label images
-        for subfolder in ["noisy", "clean", "label"]:
+        for subfolder in ["noisy", "clean"]:
             (path / subfolder).mkdir(exist_ok=True)
+            for angle in [45, 90, 180]:
+                (path / subfolder / str(angle)).mkdir(exist_ok=True)
 
         # Generate images
         num_images = getattr(args, f"num_{folder}")
 
         for i in range(num_images):
-            noisy_image, clean_image, label = generate_phantoms()
+            noisy_image, clean_image, _ = generate_phantoms()
+            for angle in [45, 90, 180]:
 
-            imageio.imsave(path / "noisy" / f"{i}.tiff", noisy_image)
-            imageio.imsave(path / "clean" / f"{i}.tiff", clean_image)
-            imageio.imsave(path / "label" / f"{i}.tiff", label)
-            print(f"Generated {folder} image {i + 1}/{num_images}")
+                imageio.imsave(path / "noisy" / str(angle) / f"{i}.tiff", noisy_image)
+                imageio.imsave(path / "clean" / str(angle) / f"{i}.tiff", clean_image)
+
+            
 
     print("Done!")
 
