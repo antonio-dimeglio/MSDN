@@ -1,34 +1,55 @@
+import argparse
 import imageio.v2 as iio
 import numpy as np
 import os
 from tqdm import trange
+import re
 
 from phantom_3d import generate_phantom
 from sinogram_reconstruction3d import create_sinogram, reconstruct
 from helper import get_slices, load_phantom
 
 
-def main():
-    data_folder = '3d_data'
-    num_slices = 128
-    phantom_fn = '3d_data/phantom_256_256_128.npy'
-    # phantom_fn = None
+def parse_phantom_filename(filename):
+    match = re.search(r'(\d+)_(\d+)_(\d+)', filename)
+    if len(match.groups()) != 3:
+        print('Was not able to parse filename.')
+        return None
+    shapes = [int(i) for i in match.groups()]
+    return np.array(shapes)
+
+
+def get_phantom(data_folder, phantom_filepath, phantom_shape):
+    phantom = None
+    if not (phantom_shape or phantom_filepath):
+        print('Either filepath to phantom or desired phantom shape needed.')
+        return None
+    
+    if not phantom_shape:
+        phantom_shape = parse_phantom_filename(phantom_filepath)
+
+    if not phantom_filepath:
+        out_file  = f'{data_folder}/phantom_{phantom_shape[0]}_{phantom_shape[1]}_{phantom_shape[2]}.npy'
+        phantom = generate_phantom(phantom_shape, 1000, 1000, 50, save=True,  out_file=out_file)
+    else: 
+        phantom = load_phantom(phantom_filepath, phantom_shape)
+        
+    return phantom
+
+
+def generate_data(data_folder='3d_data', phantom_filepath = None, phantom_shape=None):
+    # Stage 0: Initialize file structure
     [os.makedirs(f'{data_folder}/{dt}/{split}/{angle}/{group}', exist_ok=True)
      for dt in ('phantoms', 'sinograms', 'fbps')
      for split in ('train', 'test', 'val')
      for angle in (45, 90, 180, 256)
      for group in ('noisy', 'clean')]
-
-
-    # Stage 1: Generate a phantom and slice it
-    if phantom_fn:
-        phantom = load_phantom(phantom_fn, (256, 256, 128))
-    else:
-        phantom_shape = np.array([256, 256, num_slices])
-        phantom = generate_phantom(phantom_shape, 1000, 1000, 50,
-                                   save=True, out_file=f'{data_folder}/phantom_256_256_{num_slices}.npy')
     
+    # Stage 1: Obtain phantom and slice it
+    phantom = get_phantom(data_folder, phantom_filepath, phantom_shape)
     slices = get_slices(phantom, rgba=False)
+
+    # Stage 2: Split intro train/test/val
     shuffled_idx = np.arange(len(slices))
     np.random.shuffle(shuffled_idx)
     # 60:30:10 split
@@ -40,7 +61,7 @@ def main():
     }
     splits = {k: slices[split_idx[k]] for k in split_idx.keys()}
 
-    # Stage 2: Create Sinograms, FBP reconstructions and save
+    # Stage 3: Create Sinograms, FBP reconstructions and save
     for split in splits.keys():
         print(f'Starting {split}...')
         for angle in (45, 90, 180, 256):
@@ -61,8 +82,26 @@ def main():
         print(f'Finished {split}.')
 
 
+def main():
+    parser = argparse.ArgumentParser(
+                    prog='Reconstructor',
+                    description=('This program creates sinograms of an image with 45, '
+                                 '90, 180 angles then reconstructs the image using FBP.'
+                                 'Then stores the results in output folder'))
+    parser.add_argument('--data_folder', '-df', required=False, default='3d_data',
+                        help='The path to the folder where the data should be stored.')
+    parser.add_argument('--phantom_filename', '-pf', required=False,
+                        default='3d_data/phantom_256_256_128.npy',
+                        help='The path to the pre-generated phantom.')
+    parser.add_argument('--phantom_shape', '-ps', type=int, nargs=3,
+                    help='an integer for the accumulator')
+    args = parser.parse_args()
 
+    phantom_shape = np.array(args.phantom_shape)
 
+    generate_data(args.data_folder, args.phantom_filename, phantom_shape)
+    
 
+    
 if __name__ == '__main__':
     main()

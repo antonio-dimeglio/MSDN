@@ -60,7 +60,7 @@ def main():
                    )
 
     # Loss metric: RMSE (or SSIM?)
-    criterion = nn.MSELoss() # calcualte the sqrt(MSE) in the training loop
+    criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
 

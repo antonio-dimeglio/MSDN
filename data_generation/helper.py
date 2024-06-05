@@ -6,11 +6,6 @@ from tqdm import trange
 def load_phantom(filename, phantom_size=None):
     phantom = np.load(filename)
     phantom = np.unpackbits(phantom)
-
-    if not phantom_size:
-        phantom_size = filename.split('/')[-1].replace('.npy', '').split('_')[1:]
-        phantom_size = [int(i) for i in phantom_size]
-    
     return phantom.reshape(phantom_size)
 
 def save_slices(phantom3d, out_folder):
