@@ -11,34 +11,32 @@ import matplotlib.pyplot as plt
 from tqdm import trange
 from src.MSDNNet import MSDNet
 
-
 def get_dataloaders(root_folder, transform = None) -> dict[str, dict[str, DataLoader]]:
     splits = ['train', 'val', 'test']
     groups = ['noisy', 'clean']
-    num_angles = [45, 90, 180]
+    num_angles = [45, 90, 180, 256]
 
 
     datasets = {
-        split: {group: {angle: MSDNDataset(f'{root_folder}/recon/{split}/{group}/{angle}',
-                                           f'{root_folder}/phantom/{split}/{group}/{angle}',
+        split: {angle: {group: MSDNDataset(f'{root_folder}/fbps/{split}/{angle}/{group}',
+                                           f'{root_folder}/phantoms/{split}/{angle}/{group}',
                                            transform)
-                        for angle in num_angles} 
-                for group in groups}
+                        for group in groups} 
+                for angle in num_angles}
         for split in splits
     }
 
     dataloaders = {
-        split: {group: {angle: DataLoader(datasets[split][group][angle], batch_size=4, shuffle=True)
-                        for angle in num_angles}
-                for group in groups}
+        split: {angle: {group: DataLoader(datasets[split][angle][group], batch_size=4, shuffle=True)
+                        for group in groups}
+                for angle in num_angles}
         for split in splits
     }
 
     return dataloaders
 
-
 def main():
-    
+
     parser = ap.ArgumentParser(description="Entry point for the training of the MSDN dataset.")
 
     parser.add_argument("--epochs", "-e", type=int, default=10, help="Number of epochs to train the model.")
@@ -49,11 +47,9 @@ def main():
     num_epochs = args.epochs
     lr = args.lr
 
-
-    root_folder = 'data'
-    transform = None 
+    root_folder = '3d_data'
+    transform = None  # TODO: Add transforms
     dataloaders = get_dataloaders(root_folder, transform)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     model = MSDNet(in_channels=4,
                    out_channels=4,
@@ -61,16 +57,16 @@ def main():
                    num_layers=10, 
                 #    dilations=np.ones(10).astype(int),
                    dilations=np.arange(1, 11),
-                   ).to(device)
+                   )
 
     # Loss metric: RMSE (or SSIM?)
-    criterion = nn.MSELoss() # calcualte the sqrt(MSE) in the training loop
+    criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
 
     for epoch in range(num_epochs):
         running_loss = 0.0
-        for inputs, targets in dataloaders['train']['clean'][45]:
+        for inputs, targets in dataloaders['train'][256]['clean']:
             optimizer.zero_grad()
             outputs = model(inputs)
             targets = targets.type(torch.float32)
@@ -79,7 +75,12 @@ def main():
             optimizer.step()
             running_loss += loss.item()
         
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train']['clean'][45]):.4f}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train'][256]['clean']):.4f}")
 
-if __name__ == '__main__':
+
+
+    
+
+
+if __name__ == "__main__":
     main()

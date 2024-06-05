@@ -32,6 +32,7 @@ class MSDNDataset(Dataset):
         self.phantom_folder = phantom_folder
         self.fbp_files = os.listdir(self.fbp_folder)
         self.phantom_files = os.listdir(self.phantom_folder)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def __len__(self):
         return len(self.fbp_files)
@@ -43,5 +44,8 @@ class MSDNDataset(Dataset):
         if self.transform:
             fbp = self.transform(fbp)
             phantom = self.transform(phantom)
+
+        fbp = torch.tensor(fbp, dtype=torch.float32).to(self.device)
+        phantom = torch.tensor(phantom, dtype=torch.float32).to(self.device)
         
         return fbp, phantom
