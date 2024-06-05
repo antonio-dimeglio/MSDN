@@ -54,20 +54,20 @@ def main():
     transform = None 
     dataloaders = get_dataloaders(root_folder, transform)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    num_layers = 100
     
     model = MSDNet(in_channels=4,
                    out_channels=4,
                    num_features=4,
-                   num_layers=10, 
-                #    dilations=np.ones(10).astype(int),
-                   dilations=np.arange(1, 11),
+                   num_layers=num_layers,
+                   dilations=np.arange(1, num_layers+1),
                    ).to(device)
 
     # Loss metric: RMSE (or SSIM?)
-    criterion = nn.MSELoss() # calcualte the sqrt(MSE) in the training loop
+    criterion = nn.MSELoss() 
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
-
+    print("Training model...")
     for epoch in range(num_epochs):
         running_loss = 0.0
         for inputs, targets in dataloaders['train']['clean'][45]:
@@ -75,11 +75,17 @@ def main():
             outputs = model(inputs)
             targets = targets.type(torch.float32)
             loss = criterion(outputs, targets)
+            loss = torch.sqrt(loss) # RMSE
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train']['clean'][45]):.4f}")
+
+    print("Model trained.")
+    print("Saving model...")
+    torch.save(model.state_dict(), 'model.pth')
+
 
 if __name__ == '__main__':
     main()
