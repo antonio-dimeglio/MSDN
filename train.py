@@ -54,13 +54,13 @@ def main():
     transform = None 
     dataloaders = get_dataloaders(root_folder, transform)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    num_layers = 10
+    num_layers = 100
     
     model = MSDNet(in_channels=4,
                    out_channels=4,
                    num_features=4,
                    num_layers=num_layers,
-                   dilations=np.arange(1, num_layers+1),
+                   dilations=1 + (np.arange(num_layers + 1) % 10),
                    ).to(device)
 
     # Loss metric: RMSE (or SSIM?)
