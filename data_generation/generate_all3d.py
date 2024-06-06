@@ -25,7 +25,7 @@ def get_phantom(data_folder, phantom_filepath, phantom_shape):
         print('Either filepath to phantom or desired phantom shape needed.')
         return None
     
-    if phantom_shape is None:
+    if phantom_shape == None:
         phantom_shape = parse_phantom_filename(phantom_filepath)
 
     if phantom_filepath is None:
