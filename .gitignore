@@ -164,6 +164,6 @@ sinogram/
 3d_data
 recon/
 data/
-data/recon
+evaluations
 
 *.pth 
