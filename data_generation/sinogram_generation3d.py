@@ -7,7 +7,7 @@ from helper import convert_rgba_to_greyscale, convert_greyscale_to_rgba
 import matplotlib.pyplot as plt
 
 def generate_sinogram(phantom_filename, out_filename, num_angles):
-    angles = np.linspace(0, np.pi, num_angles, False)
+    angles = np.linspace(0, num_angles, data.shape[0], False)
     data = iio.imread(phantom_filename)
     if len(np.array(data).shape) == 3:
         data = convert_rgba_to_greyscale(data)

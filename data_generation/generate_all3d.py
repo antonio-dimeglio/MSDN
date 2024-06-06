@@ -45,7 +45,7 @@ def generate_data(data_folder='3d_data', phantom_filepath = None,
     [os.makedirs(f'{data_folder}/{dt}/{split}/{angle}/{group}', exist_ok=True)
      for dt in ('phantoms', 'sinograms', 'fbps')
      for split in ('train', 'test', 'val')
-     for angle in (45, 90, 180, 256)]
+     for angle in (45, 90, 180)]
     
     # Stage 1: Obtain phantom and slice it
     phantom = get_phantom(data_folder, phantom_filepath, phantom_shape)
@@ -66,7 +66,7 @@ def generate_data(data_folder='3d_data', phantom_filepath = None,
     # Stage 3: Create Sinograms, FBP reconstructions and save
     for split in splits.keys():
         print(f'Starting {split}...')
-        for angle in (45, 90, 180, 256):
+        for angle in (45, 90, 180):
             print(f'\t Angle {angle} in progress.')
             for i, slice in enumerate(splits[split]):
                 if group == 'noisy':

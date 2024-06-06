@@ -3,7 +3,7 @@ import numpy as np
 import os
 from tqdm import trange
 
-def load_phantom(filename, phantom_size=None):
+def load_phantom(filename, phantom_size):
     phantom = np.load(filename)
     phantom = np.unpackbits(phantom)
     return phantom.reshape(phantom_size)

@@ -29,7 +29,7 @@ def run_algorithm(image_id, sinogram_id,
 
 
 def create_sinogram(image, num_angles, num_iterations=100):
-    angles = np.linspace(0, np.pi, num_angles, False)
+    angles = np.linspace(0, num_angles, image.shape[0], False)
     proj_geom = astra.create_proj_geom('parallel', 1.0, image.shape[0], angles)
     vol_geom = astra.create_vol_geom(image.shape)
     projector_id = astra.create_projector('linear', proj_geom, vol_geom)
@@ -49,7 +49,7 @@ def create_sinogram(image, num_angles, num_iterations=100):
 
 
 def reconstruct(sinogram, num_angles, num_iterations=100):
-    angles = np.linspace(0, np.pi, num_angles, False)
+    angles = np.linspace(0, num_angles, sinogram.shape[0], False)
     proj_geom = astra.create_proj_geom('parallel', 1.0, sinogram.shape[1], angles)
     
     vol_geom = astra.create_vol_geom(sinogram.shape)
@@ -95,15 +95,6 @@ def reconstruct_with_angles(filename, output_dir, angles=(45, 90, 180),
 
 
 def main():
-
-    # parser = argparse.ArgumentParser(
-    #                 prog='Reconstructor',
-    #                 description=('This program creates sinograms of an image with 45, '
-    #                              '90, 180 angles then reconstructs the image using FBP.'
-    #                              'Then stores the results in output folder'))
-    # parser.add_argument('--filename', '-f', required=True,
-    #                     help='The name of the file to be processed')
-    # args = parser.parse_args()
 
     for i in trange(128):
         reconstruct_with_angles(f'3d_data/slices/phantom_3d_slice_{i}.tiff', '3d_data')
