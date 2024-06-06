@@ -54,9 +54,8 @@ def reconstruct_sinograms():
                 for i in range(num_images):
                     data = iio.imread(f'sinogram/{folder}/{img_type}/{angle}/{i}.tiff')
 
-                    for angle in angles:
-                        reconstruct_single(data, angle, i, recon_type_folder)
-                        print(f'Reconstruction {i} of {folder}/{img_type} done.')
+                    reconstruct_single(data, angle, i, recon_type_folder)
+                    print(f'Reconstruction {i} of {folder}/{img_type}/{angle} done.')
 
 def __main__():
     reconstruct_sinograms()

@@ -54,7 +54,7 @@ def main():
     transform = None 
     dataloaders = get_dataloaders(root_folder, transform)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    num_layers = 100
+    num_layers = 10
     
     model = MSDNet(in_channels=4,
                    out_channels=4,
