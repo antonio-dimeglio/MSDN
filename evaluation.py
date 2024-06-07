@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from torchsummary import summary
 from torch.utils.data import DataLoader
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import mean_squared_error as mse
 
 from src.MSDNDataset import MSDNDataset
 from src.MSDNNet import MSDNet
@@ -25,12 +27,8 @@ def get_test_dataloaders(root_folder,
     }
 
     dataloaders = {
-        group: {angle: DataLoader(datasets[group][angle],
-                                  batch_size=4,
-                                  shuffle=True)
-                for angle in num_angles}
-        for group in groups
-    }
+        group: {angle: DataLoader(datasets[group][angle], batch_size=4)
+                for angle in num_angles} for group in groups}
 
     return dataloaders
 
@@ -55,27 +53,37 @@ def main():
     dataloaders = get_test_dataloaders('.', None)
     print('Datasets loaded succesfully.')
 
-    criterion = nn.MSELoss() 
-
-    total_loss = 0
+    metrics = {
+        'ssim': {'msdn': 0, 'fbp': 0},
+        'rmse': {'msdn': 0, 'fbp': 0}
+    }
     counter = 0
     for inputs, targets in dataloaders['clean'][45]:
         if inputs.size()[0] % 4 != 0:
             break
         outputs = model(inputs)
-        [iio.imsave(f'{eval_dir}/output_{counter * 4 + i}.tiff', 
-                    outputs[i].detach().numpy())
-         for i in range(len(outputs))]
-        [iio.imsave(f'{eval_dir}/input_{counter * 4 + i}.tiff',
-                    inputs[i].detach().numpy())
-         for i in range(len(outputs))]
         targets = targets.type(torch.float32)
-        loss = criterion(outputs, targets)
-        loss = torch.sqrt(loss) # RMSE
-        total_loss += loss.item()
+
+        for i in range(len(outputs)):
+            ground_truth = iio.imread(
+                f'phantom/test/clean/45/{counter * 4 + i}.tiff')
+            output = outputs[i].detach().numpy()
+            input = inputs[i].detach().numpy()
+            metrics['ssim']['msdn'] += ssim(ground_truth, output,
+                                            data_range=output.max() - output.min())
+            metrics['rmse']['msdn'] += np.sqrt(mse(output, ground_truth))
+            
+            iio.imsave(f'{eval_dir}/output_{counter * 4 + i}.tiff', output)
+            iio.imsave(f'{eval_dir}/input_{counter * 4 + i}.tiff', input)
         counter += 1
     
-    print(f"Loss: {total_loss/len(dataloaders['clean'][45]):.4f}")
+    metrics['rmse']['msdn'] /= len(dataloaders['clean'][45])
+    metrics['ssim']['msdn'] /= len(dataloaders['clean'][45])
+    print(len(dataloaders['clean'][45]))
+    for metric in metrics.keys():
+        print(metric.upper(), ':')
+        for model in metrics[metric].keys():
+            print(f"\t{model.upper()}: {metrics[metric][model]:.4f}")
 
 
 
