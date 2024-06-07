@@ -56,9 +56,7 @@ def generate_data(data_folder='3d_data', phantom_shape=None,
     shuffled_idx = np.arange(len(slices))
     np.random.shuffle(shuffled_idx)
     # 70:30:0 split
-    pivots = np.array(
-        [0.7 * len(shuffled_idx), len(shuffled_idx)]
-        ).astype(int)
+    pivots = np.array([0.7 * len(shuffled_idx), len(shuffled_idx)]).astype(int)
     split_idx = {'train': shuffled_idx[:pivots[0]], 
                  'test': shuffled_idx[pivots[0]:pivots[1]],
                  'val': shuffled_idx[pivots[1]:]}
