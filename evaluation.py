@@ -1,5 +1,7 @@
+from datetime import datetime
 import imageio.v2 as iio
 import numpy as np
+import os
 import torch
 import torch.nn as nn
 from torchsummary import summary
@@ -34,6 +36,10 @@ def get_test_dataloaders(root_folder,
 
 
 def main():
+    model_fn = 'model2.pth'
+    timestamp = datetime.now().strftime('%y%m%d%H%M%S')
+    eval_dir = f"evaluations/{model_fn.replace('.pth', '')}_{timestamp}"
+    os.makedirs(eval_dir)
     print('Loading model.')
     model = MSDNet(in_channels=4, 
                    out_channels=4, 
@@ -41,7 +47,7 @@ def main():
                    num_layers=100,  
                    dilations=np.arange(1, 101))
     
-    model.load_state_dict(torch.load('model.pth',
+    model.load_state_dict(torch.load(model_fn,
                                      map_location=torch.device('cpu')))
     # summary(model)
     print('Model loaded succesfully.\nLoading datasets...')
@@ -57,10 +63,10 @@ def main():
         if inputs.size()[0] % 4 != 0:
             break
         outputs = model(inputs)
-        [iio.imsave(f'eval/output_{counter * 4 + i}.tiff', 
+        [iio.imsave(f'{eval_dir}/output_{counter * 4 + i}.tiff', 
                     outputs[i].detach().numpy())
          for i in range(len(outputs))]
-        [iio.imsave(f'eval/input_{counter * 4 + i}.tiff',
+        [iio.imsave(f'{eval_dir}/input_{counter * 4 + i}.tiff',
                     inputs[i].detach().numpy())
          for i in range(len(outputs))]
         targets = targets.type(torch.float32)
