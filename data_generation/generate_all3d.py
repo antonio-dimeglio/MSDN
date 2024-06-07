@@ -31,6 +31,7 @@ def generate_data(data_folder='3d_data', phantom_shape=None,
     phantoms = []
     phantom = None
     if generate_phantoms:
+        os.makedirs(f'{data_folder}/source_phantoms', exist_ok=True)
         for i in range(5):
             datetime_pattern = datetime.now().strftime('%y%m%d%H%M%S')
             out_file  = (f'{data_folder}/source_phantoms/phantom_'
