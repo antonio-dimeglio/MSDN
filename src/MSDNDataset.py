@@ -30,8 +30,8 @@ class MSDNDataset(Dataset):
         self.transform = transform
         self.fbp_folder = fbp_folder 
         self.phantom_folder = phantom_folder
-        self.fbp_files = os.listdir(self.fbp_folder)
-        self.phantom_files = os.listdir(self.phantom_folder)
+        self.fbp_files = sorted(os.listdir(self.fbp_folder))
+        self.phantom_files = sorted(os.listdir(self.phantom_folder))
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def __len__(self):
