@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 
 def generate_sinograms():
-    folders = ['train', 'test', 'val']
+    folders = ['train', 'test']
     angles = [45, 90, 180]
     image_type = ['noisy', 'clean']
     

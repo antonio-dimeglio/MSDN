@@ -12,9 +12,9 @@ from tqdm import trange
 from src.MSDNNet import MSDNet
 
 def get_dataloaders(root_folder, transform = None) -> dict[str, dict[str, DataLoader]]:
-    splits = ['train', 'val', 'test']
+    splits = ['train', 'test']
     groups = ['noisy', 'clean']
-    num_angles = [45, 90, 180, 256]
+    num_angles = [45, 90, 180]
 
 
     datasets = {
@@ -25,6 +25,7 @@ def get_dataloaders(root_folder, transform = None) -> dict[str, dict[str, DataLo
                 for angle in num_angles}
         for split in splits
     }
+
 
     dataloaders = {
         split: {angle: {group: DataLoader(datasets[split][angle][group], batch_size=4, shuffle=True)
@@ -39,7 +40,7 @@ def main():
 
     parser = ap.ArgumentParser(description="Entry point for the training of the MSDN dataset.")
 
-    parser.add_argument("--epochs", "-e", type=int, default=10, help="Number of epochs to train the model.")
+    parser.add_argument("--epochs", "-e", type=int, default=100, help="Number of epochs to train the model.")
     parser.add_argument("--lr", "-l", type=float, default=0.001, help="Learning rate for the model.")
     
     args = parser.parse_args()
@@ -50,15 +51,16 @@ def main():
     root_folder = '3d_data'
     transform = None  # TODO: Add transforms
     dataloaders = get_dataloaders(root_folder, transform)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    num_layers = 100
     
     model = MSDNet(in_channels=4,
                    out_channels=4,
                    num_features=4,
-                   num_layers=10, 
-                #    dilations=np.ones(10).astype(int),
-                   dilations=np.arange(1, 11),
-                   )
-
+                   num_layers=num_layers,
+                   dilations=1 + (np.arange(num_layers + 1) % 10),
+                   ).to(device)
+    
     # Loss metric: RMSE (or SSIM?)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -66,7 +68,7 @@ def main():
 
     for epoch in range(num_epochs):
         running_loss = 0.0
-        for inputs, targets in dataloaders['train'][256]['clean']:
+        for inputs, targets in dataloaders['train'][180]['clean']:
             optimizer.zero_grad()
             outputs = model(inputs)
             targets = targets.type(torch.float32)
@@ -75,7 +77,12 @@ def main():
             optimizer.step()
             running_loss += loss.item()
         
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train'][256]['clean']):.4f}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train'][180]['clean']):.4f}")
+
+    print("Finished Training")
+    print("Saving model...")
+
+    torch.save(model.state_dict(), 'model3d.pth')
 
 
 

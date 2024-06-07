@@ -32,7 +32,7 @@ def reconstruct_single(data, angle, i, recon_type_folder):
 
 
 def reconstruct_sinograms():
-    folders = ['train', 'test', 'val']
+    folders = ['train', 'test']
     angles = [180, 90, 45]
     image_type = ['noisy', 'clean']
 

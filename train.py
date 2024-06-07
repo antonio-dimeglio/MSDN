@@ -8,12 +8,12 @@ from torch.utils.data import DataLoader
 from src.MSDNDataset import MSDNDataset
 from src.Model import MSDN
 import matplotlib.pyplot as plt
-from tqdm import trange
+from tqdm import tqdm
 from src.MSDNNet import MSDNet
 
 
 def get_dataloaders(root_folder, transform = None) -> dict[str, dict[str, DataLoader]]:
-    splits = ['train', 'val', 'test']
+    splits = ['train', 'test']
     groups = ['noisy', 'clean']
     num_angles = [45, 90, 180]
 
@@ -41,8 +41,8 @@ def main():
     
     parser = ap.ArgumentParser(description="Entry point for the training of the MSDN dataset.")
 
-    parser.add_argument("--epochs", "-e", type=int, default=10, help="Number of epochs to train the model.")
-    parser.add_argument("--lr", "-l", type=float, default=0.001, help="Learning rate for the model.")
+    parser.add_argument("--epochs", "-e", type=int, default=100, help="Number of epochs to train the model.")
+    parser.add_argument("--lr", "-l", type=float, default=0.01, help="Learning rate for the model.")
     
     args = parser.parse_args()
 
@@ -68,9 +68,9 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     print("Training model...")
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs)):
         running_loss = 0.0
-        for inputs, targets in dataloaders['train']['clean'][45]:
+        for inputs, targets in dataloaders['train']['clean'][180]:
             optimizer.zero_grad()
             outputs = model(inputs)
             targets = targets.type(torch.float32)
@@ -80,7 +80,7 @@ def main():
             optimizer.step()
             running_loss += loss.item()
         
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train']['clean'][45]):.4f}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(dataloaders['train']['clean'][180]):.4f}")
 
     print("Model trained.")
     print("Saving model...")

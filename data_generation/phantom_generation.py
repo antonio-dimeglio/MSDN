@@ -71,20 +71,17 @@ def main():
     parser.add_argument("--output", "-o", type=str, default="phantom", help="Output directory")
     
     # Number of training images
-    parser.add_argument("--num_train", "-n", type=int, default=100, help="Number of training images")
-
-    # Number of validation images
-    parser.add_argument("--num_val", "-v", type=int, default=25, help="Number of validation images")
+    parser.add_argument("--num_train", "-n", type=int, default=500, help="Number of training images")
 
     # Number of test images
-    parser.add_argument("--num_test", "-t", type=int, default=10, help="Number of test images")
+    parser.add_argument("--num_test", "-t", type=int, default=80, help="Number of test images")
 
     args = parser.parse_args()
 
     output_dir = Path(args.output)
     output_dir.mkdir(exist_ok=True)
 
-    for folder in ["train", "val", "test"]:
+    for folder in ["train", "test"]:
         path = output_dir / folder
         path.mkdir(exist_ok=True)
 
